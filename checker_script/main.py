@@ -1,0 +1,116 @@
+import time, datetime, locale, werkzeug, Room, ftplib, json
+werkzeug.cached_property = werkzeug.utils.cached_property
+from robobrowser import RoboBrowser
+import logging
+
+logging.basicConfig(filename='roominfo.log', level=logging.INFO)
+
+
+def get_name_from_url(url):
+    url = url.split('?')[1]
+    tuples = url.split('&')[-3:]
+    name = ''
+    for tup in tuples:
+        name += f'{tup.split("=")[1]} '
+    name = name.strip().split(" ")
+    return name[0], " ".join(name[1:])
+
+
+def get_availability(browser):
+    rows = browser.find_all('table')[1].select('tr')[1:]
+    checkDay = [0] * 5
+    availability = [[0] * 60 for i in range(5)]
+    availability_trimmed = [[0] * 48 for i in range(5)]
+    currentRow = 0
+    for row in rows:
+        if currentRow%4 == 0:
+            columns = row.select('td')[2:]
+        else:
+            columns = row.select('td')[1:]
+        it = 0
+        for i in range(5):
+            if checkDay[i] != 0:
+                checkDay[i] -= 1
+            else:
+                checkDay[i] = int(columns[it]['rowspan']) - 1
+                for o in range(int(columns[it]['rowspan'])):
+                    availability[i][currentRow + o] = 1 if columns[it]['bgcolor'] == '#99cc99' else 0
+                it += 1
+                availability_trimmed[i] = availability[i][4:52]
+        currentRow += 1
+    return availability_trimmed
+
+
+def loop_iteration():
+    update_json()
+    upload_json()
+    logging.info('Loop iteration finished: ' + datetime.datetime.now().isoformat())
+
+
+def loop():
+    starttime = time.time()
+    delay = 60.0 * 30.0
+    logging.info('Starting loop: ' + datetime.datetime.now().isoformat())
+    while True:
+        loop_iteration()
+        time.sleep(delay - ((time.time() - starttime) % delay))
+
+
+def upload_json():
+    with open('ftp', 'r') as f:
+        ftp_info = f.read().split(" ");
+        ftp = ftplib.FTP(ftp_info[0], ftp_info[1], ftp_info[2])
+        data = open('data.json', 'rb')
+        ftp.storbinary('STOR data.json', data)
+        data.close()
+        ftp.quit()
+    logging.info('Uploaded data.json')
+
+
+def update_json():
+    browser = RoboBrowser(parser='html.parser',
+                          user_agent='Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0')
+    browser.open('http://www.rauminfo.ethz.ch/IndexPre.do')
+
+    room_links = [x['href'] for x in browser.select('.tabcell-distance a') if 'RauminfoPre.do' in str(x['href'])]
+    today = datetime.datetime.now()
+    today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    monday_thisweek = today - datetime.timedelta(days=today.weekday())
+    monday_nextweek = monday_thisweek + datetime.timedelta(weeks=1)
+
+    jsonData = {"datetime_thisweek": monday_thisweek.isoformat(),
+                "datetime_nextweek": monday_nextweek.isoformat(),
+                "datetime_now": datetime.datetime.now().isoformat(),
+                "buildings": {}}
+
+    for room in room_links:
+        time.sleep(0.5)
+        browser.open('http://www.rauminfo.ethz.ch/' + room)
+        name = get_name_from_url(room)
+        form = browser.get_forms()[1]
+        checkable = form['rektoratInListe'].value == 'true' and form['raumInRaumgruppe'].value == 'true'
+        if not checkable:
+            continue
+        form['tag'].value = monday_thisweek.strftime('%-d')
+        form['monat'].value = monday_thisweek.strftime('%b')
+        form['jahr'].value = monday_thisweek.strftime('%Y')
+        browser.submit_form(form)
+        availability_thisweek = get_availability(browser)
+        browser.back()
+        form['tag'].value = monday_nextweek.strftime('%-d')
+        form['monat'].value = monday_nextweek.strftime('%b')
+        form['jahr'].value = monday_nextweek.strftime('%Y')
+        browser.submit_form(form)
+        availability_nextweek = get_availability(browser)
+        roomObj = Room.Room(name[1], availability_thisweek, availability_nextweek)
+        if name[0] not in jsonData.get("buildings"):
+            jsonData.get("buildings").update({name[0]: []})
+        jsonData.get("buildings").get(name[0]).append(roomObj.__dict__)
+        logging.info('Added room ' + " ".join(name) + ': ' + datetime.datetime.now().isoformat())
+
+    with open('data.json', 'w') as file:
+        json.dump(jsonData, file, ensure_ascii=False)
+
+
+locale.setlocale(locale.LC_ALL, 'de_CH.UTF-8')
+loop()
