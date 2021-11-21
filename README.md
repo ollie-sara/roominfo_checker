@@ -1,4 +1,4 @@
-#roominfo_checker
+# roominfo_checker
 Checks and displays all the room occupancy for ETH Zurich campus. Currently only looks at rooms administered by the 
 central ETH administration and ignores all department administered rooms.
 
