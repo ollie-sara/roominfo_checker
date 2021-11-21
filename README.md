@@ -3,12 +3,6 @@ Checks and displays all the room occupancy for ETH Zurich campus. Currently only
 central ETH administration and ignores all department administered rooms.
 
 It should be noted that I chose to omit following items from the git push:
-- JavaScript Dependencies (I don't want to get into unnecessary legal trouble/Don't want to read the licences. Follow 
-the HTML head to see where they would usually be stored)
-  - jQuery 3.6.0
-  - jQuery UI Touch-Punch
-  - jQuery UI
-  - jQuery DataTables 1.11.3 with FixedColumns and FixedHeader extension
 - Python packages (Not sure which of these are actually necessary but I can't be bothered to go 
 through the list and check)
   - Werkzeug
