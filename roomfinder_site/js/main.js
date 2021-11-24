@@ -1,19 +1,5 @@
-async function replaceTable() {
-  var tds = $("#avail-table tbody").find("td");
-  for (var i = 0; i < tds.length; i++) {
-    if(tds[i].innerText == "1") {
-      tds[i].innerText = "";
-      tds[i].style.backgroundColor = "rgb(51, 202, 127)";
-    } else if(tds[i].innerText == "0") {
-      tds[i].innerText = "";
-      tds[i].style.backgroundColor = "rgb(238, 56, 56)";
-    }
-  }
-  return;
-}
-
 async function warnIfDead(lastChecked){
-    var diff = new Date(((new Date()).getTime() + ((new Date()).getTimezoneOffset() * 60000) - lastChecked.getTime()) / (1000 * 60));
+    var diff = (new Date().getTime() + new Date().getTimezoneOffset() - lastChecked.getTime() + 60) / (1000 * 60);
     if(diff > 45) {
       $("#oldDataWarning").html("⚠ Warning: The information on the site is more than <b>" + Math.round(diff) + " minutes</b> old. The automatic checker script might be down. Maybe Ollie hasn't noticed, you should contact him.");
       $("#oldDataWarning").show()
@@ -21,8 +7,18 @@ async function warnIfDead(lastChecked){
 }
 
 async function fillOptions(){
-  var jsonData = await (await fetch("/data/data.json")).json();
-  console.log(jsonData);
+  var reqHeader = new Headers();
+  reqHeader.append("pragma", "no-cache");
+  reqHeader.append("cache-control", "no-cache");
+
+  var reqInit = {
+  	method: "GET",
+  	headers: reqHeader
+  };
+
+  var reqRequest = new Request("/data/data.json");
+
+  var jsonData = await (await fetch(reqRequest, reqInit)).json();
 
   var all = $("<option>");
   all.attr("value", "0");
@@ -53,7 +49,7 @@ async function fillOptions(){
     option.text(weekday[i] + thisweek.toLocaleDateString('de-CH'));
     $("#date").append(option);
     thisweek.setDate(thisweek.getDate() + 1);
-    if(thisweek.getDate() == (new Date()).getDate()) {
+    if(thisweek.getDate()-1 == (new Date()).getDate()) {
       $("#date option:eq("+ i +")").prop("selected", true);
     }
   }
@@ -67,9 +63,9 @@ async function fillOptions(){
   }
 }
 
-async function getData() {
-  var jsonData = await (await fetch("/data/data.json")).json();
-  var output = []
+function getData(json) {
+  var jsonData = json;
+  var data = []
 
   var now = new Date(jsonData['datetime_now']);
   $("#updatedInfo").text("RoomInfo last checked: " + now.toLocaleString('de-CH'));
@@ -87,10 +83,10 @@ async function getData() {
       var row = [];
       row.push(Object.keys(jsonData['buildings'])[i] + " " + Object.values(Object.values(jsonData['buildings'])[i])[j]['name']);
       row = row.concat(Object.values(Object.values(jsonData['buildings'])[i])[j][week == 0 ? "availability_thisweek" : "availability_nextweek"][date]);
-      output.push(row);
+      data.push(row);
     }
   }
-  return output;
+  return data;
 }
 
 $(document).ready(async function(){
@@ -132,32 +128,45 @@ $(document).ready(async function(){
         }
       }
       table.columns(selector).visible(true);
-      await replaceTable();
     }
   });
 
   time_sel.text(time.slider("values", 0) + ":00 - " + time.slider("values", 1) + ":00");
 
   await fillOptions();
-  var data = await getData();
-  $("#avail-table").dataTable({
-    data: data,
+  var table = $("#avail-table").dataTable({
+    ajax: {
+      url: "data/data.json",
+      dataSrc: function(json) {
+        return getData(json);
+      },
+      cache: false,
+      error: function(xhr, textStatus, errorThrown) {
+        console.log(errorThrown);
+      }
+    },
+    createdRow: function(row, data, dataIndex, cells) {
+      for(var i = 0; i < data.length; i++) {
+        if(data[i] == 1) {
+          cells[i].style["background-color"] = "rgb(51, 202, 127)";
+          cells[i].innerHTML = "";
+        } else if(data[i] == 0) {
+          cells[i].style["background-color"] = "rgb(238, 56, 56)";
+          cells[i].innerHTML = "";
+        }
+      }
+    },
     paging: false,
     searching: false,
     info: false,
     ordering: false
   });
-  await replaceTable();
 
   $("#building").change(async function() {
-    var newData = await getData();
-    $("#avail-table").DataTable().clear().rows.add(newData).draw();
-    await replaceTable();
+    $("#avail-table").DataTable().ajax.reload();
   });
 
   $("#date").change(async function() {
-    var newData = await getData();
-    $("#avail-table").DataTable().clear().rows.add(newData).draw();
-    await replaceTable();
+    $("#avail-table").DataTable().ajax.reload();
   });
 });
