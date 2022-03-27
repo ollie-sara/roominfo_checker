@@ -103,13 +103,22 @@ async def update_json():
         if not checkable:
             logging.info(strnow() + "\tSkipping room " + " ".join(name))
             continue
-        form['tag'].value = monday_thisweek.strftime('%d')
+
+        daystr = monday_thisweek.strftime('%d')
+        if daystr[0] == '0':
+            form['tag'].value = daystr[1]
+        else:
+            form['tag'].value = daystr
         form['monat'].value = monday_thisweek.strftime('%b')
         form['jahr'].value = monday_thisweek.strftime('%Y')
         browser.submit_form(form)
         availability_thisweek = get_availability(browser)
         browser.back()
-        form['tag'].value = monday_nextweek.strftime('%d')
+        daystr = monday_nextweek.strftime('%d')
+        if daystr[0] == '0':
+            form['tag'].value = daystr[1]
+        else:
+            form['tag'].value = daystr
         form['monat'].value = monday_nextweek.strftime('%b')
         form['jahr'].value = monday_nextweek.strftime('%Y')
         browser.submit_form(form)
