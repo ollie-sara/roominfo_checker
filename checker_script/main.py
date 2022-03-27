@@ -55,7 +55,7 @@ async def loop_iteration():
 
 async def loop():
     starttime = time.time()
-    delay = 60.0 * 30.0
+    delay = 60.0 * 15.0
     logging.info(strnow() + "\tStarting loop")
     task = None
     while True:

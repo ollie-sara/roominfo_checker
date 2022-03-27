@@ -29,8 +29,24 @@ body
     color: $txtclr
     font-family: $hfont
 
+#avail-table_wrapper
+  overflow: scroll
+  scrollbar-width: none
+  -ms-overflow-style: none
+
+#avail-table_wrapper::-webkit-scrollbar
+  display: hide
+
 #content
   padding: 0px 50px
+
+@media (max-width: 768px)
+  .container
+    max-width: 100%
+
+  #content
+    padding: 0 25px
+
 
 #header
   padding-top: 20px
