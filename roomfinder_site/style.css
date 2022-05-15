@@ -19,8 +19,27 @@ body h1, body h2, body h3, body h4 {
   font-family: "Blatant", sans-serif;
 }
 
+#avail-table_wrapper {
+  overflow: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#avail-table_wrapper::-webkit-scrollbar {
+  display: hide;
+}
+
 #content {
   padding: 0px 50px;
+}
+
+@media (max-width: 768px) {
+  .container {
+    max-width: 100%;
+  }
+  #content {
+    padding: 0 25px;
+  }
 }
 
 #header {
@@ -69,24 +88,40 @@ body h1, body h2, body h3, body h4 {
 
 #timerange_wrapper {
   margin-top: 4px;
+  display: -webkit-box;
+  display: -ms-flexbox;
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: row;
+          flex-direction: row;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
 }
 
 #timerange_selection {
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
   display: inline-flex;
 }
 
 #timerange_container {
   padding: 0px 15px;
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
   display: inline-flex;
-  align-self: center;
-  flex: 1 0;
+  -ms-flex-item-align: center;
+      align-self: center;
+  -webkit-box-flex: 1;
+      -ms-flex: 1 0;
+          flex: 1 0;
 }
 
 #timerange {
-  flex: 1;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
 }
 
 #timerange .ui-slider-handle {
@@ -107,6 +142,7 @@ body h1, body h2, body h3, body h4 {
 }
 
 #avail-table thead {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -123,3 +159,4 @@ body h1, body h2, body h3, body h4 {
   text-align: right;
   border: none;
 }
+/*# sourceMappingURL=style.css.map */

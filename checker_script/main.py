@@ -8,8 +8,7 @@ import sys, os
 logging.basicConfig(filename='roominfo.log', level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler())
 
-def strnow():
-    return datetime.datetime.now().isoformat()
+strnow = datetime.datetime.now().isoformat
 
 def get_name_from_url(url):
     url = url.split('?')[1]
