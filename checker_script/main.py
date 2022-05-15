@@ -2,9 +2,14 @@ import time, datetime, locale, werkzeug, Room, ftplib, json
 werkzeug.cached_property = werkzeug.utils.cached_property
 from robobrowser import RoboBrowser
 import logging
+import asyncio
+import sys, os
 
 logging.basicConfig(filename='roominfo.log', level=logging.INFO)
+logging.getLogger().addHandler(logging.StreamHandler())
 
+def strnow():
+    return datetime.datetime.now().isoformat()
 
 def get_name_from_url(url):
     url = url.split('?')[1]
@@ -17,6 +22,7 @@ def get_name_from_url(url):
 
 
 def get_availability(browser):
+    logging.info(strnow() + "\tGetting availability")
     rows = browser.find_all('table')[1].select('tr')[1:]
     checkDay = [0] * 5
     availability = [[0] * 60 for i in range(5)]
@@ -38,25 +44,31 @@ def get_availability(browser):
                 it += 1
                 availability_trimmed[i] = availability[i][4:52]
         currentRow += 1
+    logging.info(strnow() + "\tSuccessfully gotten availability")
     return availability_trimmed
 
 
-def loop_iteration():
-    update_json()
-    upload_json()
-    logging.info('Loop iteration finished: ' + datetime.datetime.now().isoformat())
+async def loop_iteration():
+    logging.info(strnow() + "\tLoop iteration started")
+    await update_json()
+    await upload_json()
+    logging.info(strnow() + "\tLoop iteration finished")
 
 
-def loop():
+async def loop():
     starttime = time.time()
-    delay = 60.0 * 30.0
-    logging.info('Starting loop: ' + datetime.datetime.now().isoformat())
+    delay = 60.0 * 15.0
+    logging.info(strnow() + "\tStarting loop")
+    task = None
     while True:
-        loop_iteration()
-        time.sleep(delay - ((time.time() - starttime) % delay))
+        if task is not None:
+            task.cancel()
+        task = asyncio.create_task(loop_iteration())
+        await asyncio.sleep(delay - ((time.time() - starttime) % delay))
 
 
-def upload_json():
+async def upload_json():
+    logging.info(strnow() + "\tUploading data.json...")
     with open('ftp', 'r') as f:
         ftp_info = f.read().split(" ");
         ftp = ftplib.FTP(ftp_info[0], ftp_info[1], ftp_info[2])
@@ -64,10 +76,11 @@ def upload_json():
         ftp.storbinary('STOR data.json', data)
         data.close()
         ftp.quit()
-    logging.info('Uploaded data.json')
+    logging.info(strnow() + "\tUploaded data.json")
 
 
-def update_json():
+async def update_json():
+    logging.info(strnow() + "\tUpdating json")
     browser = RoboBrowser(parser='html.parser',
                           user_agent='Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0')
     browser.open('http://www.rauminfo.ethz.ch/IndexPre.do')
@@ -80,37 +93,52 @@ def update_json():
 
     jsonData = {"datetime_thisweek": monday_thisweek.isoformat(),
                 "datetime_nextweek": monday_nextweek.isoformat(),
-                "datetime_now": datetime.datetime.now().isoformat(),
+                "datetime_now": strnow(),
                 "buildings": {}}
 
     for room in room_links:
-        time.sleep(0.5)
-        browser.open('http://www.rauminfo.ethz.ch/' + room)
-        name = get_name_from_url(room)
-        form = browser.get_forms()[1]
-        checkable = form['rektoratInListe'].value == 'true' and form['raumInRaumgruppe'].value == 'true'
-        if not checkable:
-            continue
-        form['tag'].value = monday_thisweek.strftime('%-d')
-        form['monat'].value = monday_thisweek.strftime('%b')
-        form['jahr'].value = monday_thisweek.strftime('%Y')
-        browser.submit_form(form)
-        availability_thisweek = get_availability(browser)
-        browser.back()
-        form['tag'].value = monday_nextweek.strftime('%-d')
-        form['monat'].value = monday_nextweek.strftime('%b')
-        form['jahr'].value = monday_nextweek.strftime('%Y')
-        browser.submit_form(form)
-        availability_nextweek = get_availability(browser)
-        roomObj = Room.Room(name[1], availability_thisweek, availability_nextweek)
-        if name[0] not in jsonData.get("buildings"):
-            jsonData.get("buildings").update({name[0]: []})
-        jsonData.get("buildings").get(name[0]).append(roomObj.__dict__)
-        logging.info('Added room ' + " ".join(name) + ': ' + datetime.datetime.now().isoformat())
+        try:
+            await asyncio.sleep(0.5)
+            browser.open('http://www.rauminfo.ethz.ch/' + room)
+            name = get_name_from_url(room)
+            form = browser.get_forms()[1]
+            checkable = form['rektoratInListe'].value == 'true' and form['raumInRaumgruppe'].value == 'true'
+            if not checkable:
+                logging.info(strnow() + "\tSkipping room " + " ".join(name))
+                continue
+
+            daystr = monday_thisweek.strftime('%d')
+            if daystr[0] == '0':
+                form['tag'].value = daystr[1]
+            else:
+                form['tag'].value = daystr
+            form['monat'].value = monday_thisweek.strftime('%b')
+            form['jahr'].value = monday_thisweek.strftime('%Y')
+            browser.submit_form(form)
+            availability_thisweek = get_availability(browser)
+            browser.back()
+            daystr = monday_nextweek.strftime('%d')
+            if daystr[0] == '0':
+                form['tag'].value = daystr[1]
+            else:
+                form['tag'].value = daystr
+            form['monat'].value = monday_nextweek.strftime('%b')
+            form['jahr'].value = monday_nextweek.strftime('%Y')
+            browser.submit_form(form)
+            availability_nextweek = get_availability(browser)
+            roomObj = Room.Room(name[1], availability_thisweek, availability_nextweek)
+            if name[0] not in jsonData.get("buildings"):
+                jsonData.get("buildings").update({name[0]: []})
+            jsonData.get("buildings").get(name[0]).append(roomObj.__dict__)
+            logging.info(strnow() + "\tAdded room " + " ".join(name))
+        except Exception as e:
+            logging.info(strnow() + f'\tError occurred with room {" ".join(name)} on line {sys.exc_info()[-1].tb_lineno}:\n__ ' + str(e))
+            logging.info("__ Therefore, skipping room " + " ".join(name))
 
     with open('data.json', 'w') as file:
         json.dump(jsonData, file, ensure_ascii=False)
+    logging.info(strnow() + "\tSuccessfully updated json")
 
 
 locale.setlocale(locale.LC_ALL, 'de_CH.UTF-8')
-loop()
+asyncio.run(loop())
