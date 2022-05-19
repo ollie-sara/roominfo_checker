@@ -72,7 +72,7 @@ function getData(json) {
   warnIfDead(now);
 
   var date = $("#date").val();
-  var week = Math.round(date / 5);
+  var week = Math.floor(date / 5);
   date = date % 5;
 
   for(var i = 0; i < Object.keys(jsonData['buildings']).length; i++) {
