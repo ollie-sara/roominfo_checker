@@ -1,7 +1,17 @@
 async function warnIfDead(lastChecked){
     var diff = (new Date().getTime() + new Date().getTimezoneOffset() - lastChecked.getTime() + 60) / (1000 * 60);
+    var t_in_min = Math.round(diff);
+    var min = t_in_min % 60;
+    var hour = Math.floor(t_in_min/60) % 24;
+    var day = Math.floor(t_in_min/(60*24)) % 7;
+    var week = Math.floor(t_in_min/(60*24*7));
+    var timestring = (week == 0 ? "" : week + " week" + (week > 1 ? "s, " : ", "))
+                   + (day == 0 ? "" : day + " day" + (day > 1 ? "s, " : ", "))
+                   + (hour == 0 ? "" : hour + " hour" + (hour > 1 ? "s, " : ", "))
+                   + (week + day + hour == 0 ? "" : "and ")
+                   + min + " minutes"
     if(diff > 45) {
-      $("#oldDataWarning").html("⚠ Warning: The information on the site is more than <b>" + Math.round(diff) + " minutes</b> old. The automatic checker script might be down. Maybe Ollie hasn't noticed, you should contact him.");
+      $("#oldDataWarning").html("⚠ Warning: The information on the site is more than <b>"+ timestring +"</b> old. The automatic checker script might be down. Maybe Ollie hasn't noticed, you should contact him.");
       $("#oldDataWarning").show()
     }
 }
