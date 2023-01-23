@@ -37,9 +37,12 @@ def get_availability(browser):
             if checkDay[i] != 0:
                 checkDay[i] -= 1
             else:
-                checkDay[i] = int(columns[it]['rowspan']) - 1
-                for o in range(int(columns[it]['rowspan'])):
-                    availability[i][currentRow + o] = 1 if columns[it]['bgcolor'] == '#99cc99' else 0
+                # Explicitly skip all bookings marked "study rooms"
+                if True:
+                    allow_blocked = 'rbeitsplätze' in str(columns[it].find('font'))
+                    for o in range(int(columns[it]['rowspan'])):
+                        availability[i][currentRow + o] = 1 if allow_blocked or columns[it]['bgcolor'] == '#99cc99' else 0
+                    checkDay[i] = int(columns[it]['rowspan']) - 1
                 it += 1
                 availability_trimmed[i] = availability[i][4:52]
         currentRow += 1
