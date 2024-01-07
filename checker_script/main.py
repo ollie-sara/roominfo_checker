@@ -1,9 +1,9 @@
-import time, datetime, locale, werkzeug, Room, ftplib, json
+import datetime, locale, werkzeug, Room, json
 werkzeug.cached_property = werkzeug.utils.cached_property
 from robobrowser import RoboBrowser
+from asyncio import sleep, run
 import logging
-import asyncio
-import sys, os
+import sys
 
 logging.basicConfig(filename='roominfo.log', level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -21,7 +21,6 @@ def get_name_from_url(url):
 
 
 def get_availability(browser):
-    logging.info(strnow() + "\tGetting availability")
     rows = browser.find_all('table')[1].select('tr')[1:]
     checkDay = [0] * 5
     availability = [[0] * 60 for i in range(5)]
@@ -46,40 +45,7 @@ def get_availability(browser):
                 it += 1
                 availability_trimmed[i] = availability[i][4:52]
         currentRow += 1
-    logging.info(strnow() + "\tSuccessfully gotten availability")
     return availability_trimmed
-
-
-async def loop_iteration():
-    logging.info(strnow() + "\tLoop iteration started")
-    await update_json()
-    await upload_json()
-    logging.info(strnow() + "\tLoop iteration finished")
-
-
-async def loop():
-    starttime = time.time()
-    delay = 60.0 * 15.0
-    logging.info(strnow() + "\tStarting loop")
-    task = None
-    while True:
-        if task is not None:
-            task.cancel()
-        task = asyncio.create_task(loop_iteration())
-        await asyncio.sleep(delay - ((time.time() - starttime) % delay))
-
-
-async def upload_json():
-    logging.info(strnow() + "\tUploading data.json...")
-    with open('ftp', 'r') as f:
-        ftp_info = f.read().split(" ");
-        ftp = ftplib.FTP(ftp_info[0], ftp_info[1], ftp_info[2])
-        data = open('data.json', 'rb')
-        ftp.storbinary('STOR data.json', data)
-        data.close()
-        ftp.quit()
-    logging.info(strnow() + "\tUploaded data.json")
-
 
 async def update_json():
     logging.info(strnow() + "\tUpdating json")
@@ -100,7 +66,7 @@ async def update_json():
 
     for room in room_links:
         try:
-            await asyncio.sleep(0.5)
+            await sleep(0.5)
             browser.open('http://www.rauminfo.ethz.ch/' + room)
             name = get_name_from_url(room)
             form = browser.get_forms()[1]
@@ -137,10 +103,10 @@ async def update_json():
             logging.info(strnow() + f'\tError occurred with room {" ".join(name)} on line {sys.exc_info()[-1].tb_lineno}:\n__ ' + str(e))
             logging.info("__ Therefore, skipping room " + " ".join(name))
 
-    with open('data.json', 'w') as file:
+    with open('docs/_site/data/data.json', 'w') as file:
         json.dump(jsonData, file, ensure_ascii=False)
     logging.info(strnow() + "\tSuccessfully updated json")
 
 
 locale.setlocale(locale.LC_ALL, 'de_CH.UTF-8')
-asyncio.run(loop())
+run(update_json())
