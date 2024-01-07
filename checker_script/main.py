@@ -108,5 +108,4 @@ async def update_json():
     logging.info(strnow() + "\tSuccessfully updated json")
 
 
-locale.setlocale(locale.LC_ALL, 'de_CH.UTF-8')
 run(update_json())
