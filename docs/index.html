@@ -1,75 +1,8 @@
-<!DOCTYPE html>
+---
+layout: default
+---
 
-<html>
- <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
-  <link rel="stylesheet" type="text/css" href="/assets/js/DataTables/datatables.css"/>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous" />
-  <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico"/>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-  <link rel="stylesheet" href="/assets/js/jquery-ui.min.css" />
-  <script type="text/javascript" src="/assets/js/jquery-3.6.0.min.js"></script>
-  <script type="text/javascript" src="/assets/js/jquery-ui.min.js"></script>
-  <script type="text/javascript" src="/assets/js/jquery.ui.touch-punch.min.js"></script>
-  <script type="text/javascript" src="/assets/js/DataTables/datatables.js"></script>
-  <script type="text/javascript" src="/assets/js/main.js"></script>
-  <title>Ollie's Sick Room Finder v2.0</title>
- </head>
- <body>
-  <div id="content" class="container">
-   <div id="header" class="row justify-content-between">
-    <div class="col-auto">
-     <h1>Ollie's Sick Room Finder</h1>
-     v2.0
-    </div>
-    <div class="col-auto align-self-center">
-     <div class="container">
-      <div id="links" class="row justify-content-end">
-       <a class="col" href="https://www.instagram.com/ollie.sara/">ig</a>
-       <a class="col" href="https://github.com/ollie-sara/">github</a>
-       <a class="col" href="https://blog.saravanja.ch/">blog</a>
-      </div>
-     </div>
-    </div>
-   </div>
-   <div id="info" class="row align-items-end">
-    <p class="col" id="updatedInfo">
-    </p>
-    <p id="oldDataWarning" class="col" style="display:none">
-     ⚠ Warning: The information on the site is more than <b>25 minutes</b> old. The automatic checker script might be down. Maybe Ollie hasn't noticed, you should contact him.
-    </p>
-   </div>
-   <form id="form" class="row">
-    <div class="container">
-     <div class="row">
-      <div class="col-md">
-       <label>Building</label>
-       <div class="form-content">
-        <select id="building" class="form-select" aria-label="Building">
-        </select>
-       </div>
-      </div>
-      <div class="col-md">
-       <label>Date</label>
-       <div class="form-content">
-        <select id="date" class="form-select" aria-label="Date">
-        </select>
-       </div>
-      </div>
-      <div class="col-md">
-       <label>Time</label>
-       <div class="form-content" id="timerange_wrapper" aria-lable="Time">
-        <div id="timerange_selection"></div>
-        <div id="timerange_container">
-         <div id="timerange"></div>
-        </div>
-       </div>
-      </div>
-     </div>
-    </div>
-   </form>
-   <table id="avail-table" class="compact" style="width:100%">
+<table id="avail-table" class="compact" style="width:100%">
     <thead>
       <tr>
         <th>Room</th>
@@ -138,9 +71,5 @@
         <th></th>
       </tr>
     </thead>
-    <tbody>
-    </tbody>
-   </table>
-  </div>
- </body>
-</html>
+    <tbody></tbody>
+</table>

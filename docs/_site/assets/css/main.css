@@ -1,10 +1,10 @@
 @font-face {
   font-family: "Blatant";
-  src: url("/assets/fonts/Blatant-Bold.otf") format("opentype");
+  src: url("/roominfo_checker/assets/fonts/Blatant-Bold.otf") format("opentype");
 }
 @font-face {
   font-family: "Karasuma";
-  src: url("/assets/fonts/KarasumaGothic-Regular.otf") format("opentype");
+  src: url("/roominfo_checker/assets/fonts/KarasumaGothic-Regular.otf") format("opentype");
 }
 body {
   background-color: rgb(245, 233, 233);
