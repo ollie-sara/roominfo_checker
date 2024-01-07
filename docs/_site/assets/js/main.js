@@ -26,7 +26,7 @@ async function fillOptions(){
   	headers: reqHeader
   };
 
-  var reqRequest = new Request(window.location.pathname + "/data/data.json");
+  var reqRequest = new Request("https://raw.githubusercontent.com/ollie-sara/roominfo_checker/master/docs/_site/data/data.json");
 
   var jsonData = await (await fetch(reqRequest, reqInit)).json();
 
