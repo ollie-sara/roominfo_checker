@@ -64,7 +64,7 @@ async def update_json():
                 "datetime_now": strnow(),
                 "buildings": {}}
 
-    for room in room_links:
+    for room in room_links[0:3]:
         try:
             await sleep(0.5)
             browser.open('http://www.rauminfo.ethz.ch/' + room)
