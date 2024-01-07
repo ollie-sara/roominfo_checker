@@ -5,3 +5,5 @@
 /checker_script/roominfo.log
 /checker_script/__init__.py
 /.idea
+*.log
+*.pyc
