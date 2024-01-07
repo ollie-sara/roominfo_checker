@@ -2,6 +2,7 @@ import datetime, locale, werkzeug, Room, json
 werkzeug.cached_property = werkzeug.utils.cached_property
 from robobrowser import RoboBrowser
 from asyncio import sleep, run
+from os import getcwd
 import logging
 import sys
 
@@ -105,6 +106,7 @@ async def update_json():
 
     with open('docs/data/data.json', 'w') as file:
         json.dump(jsonData, file, ensure_ascii=False)
+        logging.info(strnow() + f"\tSaved to path: {getcwd()}/docs/data/data.json")
     logging.info(strnow() + "\tSuccessfully updated json")
 
 
