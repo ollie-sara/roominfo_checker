@@ -3,7 +3,7 @@ name: update roomdata json
 on: 
   workflow_dispatch:
   schedule:
-    - cron: '0 0,12 * * *' # At 00:00 and 12:00 every day
+    - cron: '0 5,13 * * *' # At 00:00 and 12:00 every day
 
 jobs:
   build:
