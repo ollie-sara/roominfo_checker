@@ -103,7 +103,7 @@ async def update_json():
             logging.info(strnow() + f'\tError occurred with room {" ".join(name)} on line {sys.exc_info()[-1].tb_lineno}:\n__ ' + str(e))
             logging.info("__ Therefore, skipping room " + " ".join(name))
 
-    with open('docs/_site/data/data.json', 'w') as file:
+    with open('docs/data/data.json', 'w') as file:
         json.dump(jsonData, file, ensure_ascii=False)
     logging.info(strnow() + "\tSuccessfully updated json")
 
