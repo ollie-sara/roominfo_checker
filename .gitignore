@@ -3,6 +3,5 @@
 /checker_script/ftp
 /checker_script/venv
 /checker_script/roominfo.log
-data.json
 /checker_script/__init__.py
 /.idea
