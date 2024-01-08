@@ -10,7 +10,7 @@ async function warnIfDead(lastChecked){
                    + (hour == 0 ? "" : hour + " hour" + (hour > 1 ? "s, " : ", "))
                    + (week + day + hour == 0 ? "" : "and ")
                    + min + " minutes"
-    if(diff > 180) {
+    if(diff > 60*24) {
       $("#oldDataWarning").html("⚠ Warning: The information on the site is more than <b>"+ timestring +"</b> old. The automatic checker script might be down. Maybe Ollie hasn't noticed, you should contact him.");
       $("#oldDataWarning").show()
     }
