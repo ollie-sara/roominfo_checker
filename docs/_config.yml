@@ -1,3 +1,3 @@
-url: "ollie-sara.github.io" # the base hostname & protocol for your site, e.g. http://example.com
-baseurl: "/roominfo_checker" # the subpath of your site, e.g. /blog
+url: "rooms.saravanja.ch" # the base hostname & protocol for your site, e.g. http://example.com
+baseurl: "" # the subpath of your site, e.g. /blog
 title: "Ollie's Sick Room Finder" # the name of your site, e.g. ACME Corp.
