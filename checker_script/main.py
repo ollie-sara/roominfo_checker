@@ -109,5 +109,5 @@ async def update_json():
         logging.info(strnow() + f"\tSaved to path: {getcwd()}/docs/data/data.json")
     logging.info(strnow() + "\tSuccessfully updated json")
 
-
+locale.setlocale(locale.LC_ALL, 'de_CH')
 run(update_json())
