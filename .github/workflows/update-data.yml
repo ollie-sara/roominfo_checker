@@ -27,19 +27,13 @@ jobs:
         with:
           timezoneLinux: "Europe/Zurich"
 
-      - name: set locale
+      - name: install german language pack
         run: |
-          sudo apt-get update && sudo apt-get install tzdata locales -y   
-          sudo localedef -f ISO8859-1 -i /usr/share/i18n/locales/de_CH /usr/lib/locale/de_CH.ISO8859-1
-          sudo echo 'de_CH.ISO8859-1 ISO8859-1' | sudo tee -a /etc/locale.gen > /dev/null  
-          sudo mkdir /usr/local/share/i18n
-          sudo touch /usr/local/share/i18n/SUPPORTED
-          sudo echo 'de_CH.ISO8859-1' | sudo tee -a /usr/local/share/i18n/SUPPORTED > /dev/null  
-          sudo locale-gen de_CH.ISO8859-1      
-          sudo locale-gen de_CH
-          sudo locale-gen
-          echo "Current Locale"
-          locale
+          echo "Installed (Before)"
+          locale -a
+          sudo apt-get update && sudo apt-get install language-pack-de
+          echo "Installed (After)"
+          locale -a
           
       - name: checkout repo content
         uses: actions/checkout@v4 # checkout the repository content
