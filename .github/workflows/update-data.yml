@@ -26,6 +26,15 @@ jobs:
         uses: szenius/set-timezone@v1.2
         with:
           timezoneLinux: "Europe/Zurich"
+
+      - name: set locale
+        run: |
+          sudo apt-get update && sudo apt-get install tzdata locales -y && sudo locale-gen de_CH.UTF-8
+          sudo localectl set-locale LANG="de_CH.UTF-8"
+          export LANG="de_CH.UTF-8"
+          sudo update-locale
+          echo "Current Locale"
+          locale
           
       - name: checkout repo content
         uses: actions/checkout@v4 # checkout the repository content
