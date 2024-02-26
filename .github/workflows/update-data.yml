@@ -29,10 +29,15 @@ jobs:
 
       - name: set locale
         run: |
-          sudo apt-get update && sudo apt-get install tzdata locales -y && sudo locale-gen de_CH.UTF-8
-          sudo localectl set-locale LANG="de_CH.UTF-8"
-          export LANG="de_CH.UTF-8"
-          sudo update-locale
+          sudo apt-get update && sudo apt-get install tzdata locales -y   
+          sudo localedef -f ISO8859-1 -i /usr/share/i18n/locales/de_CH /usr/lib/locale/de_CH.ISO8859-1
+          sudo echo 'de_CH.ISO8859-1 ISO8859-1' | sudo tee -a /etc/locale.gen > /dev/null  
+          sudo mkdir /usr/local/share/i18n
+          sudo touch /usr/local/share/i18n/SUPPORTED
+          sudo echo 'de_CH.ISO8859-1' | sudo tee -a /usr/local/share/i18n/SUPPORTED > /dev/null  
+          sudo locale-gen de_CH.ISO8859-1      
+          sudo locale-gen de_CH
+          sudo locale-gen
           echo "Current Locale"
           locale
           
