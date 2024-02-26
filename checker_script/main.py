@@ -6,6 +6,8 @@ from os import getcwd
 import logging
 import sys
 
+locale.setlocale(locale.LC_ALL, 'de_CH')
+
 logging.basicConfig(filename='roominfo.log', level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler())
 
