@@ -32,7 +32,7 @@ jobs:
           echo "Installed (Before)"
           locale -a
           sudo apt-get update && sudo apt-get install language-pack-de
-          locale-gen de_CH
+          sudo locale-gen de_CH
           echo "Installed (After)"
           locale -a
           
