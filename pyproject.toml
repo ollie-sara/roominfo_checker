@@ -21,6 +21,9 @@ soupsieve = "^2.5"
 urllib3 = "^2.2.1"
 
 
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
