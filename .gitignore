@@ -8,3 +8,6 @@
 *.log
 *.pyc
 _site/*
+
+# Ignore Python virtual environment
+.venv
