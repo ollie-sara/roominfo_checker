@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "checker_script"
+version = "2.0.0"
+description = ""
+authors = ["Oliver <oliver.saravanja@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+Werkzeug = "^2.2.2"
+beautifulsoup4 = "^4.12.3"
+certifi = "^2024.2.2"
+chardet = "^5.2.0"
+idna = "^3.6"
+requests = "^2.31.0"
+robobrowser = "^0.5.3"
+setuptools = "^69.2.0"
+six = "^1.16.0"
+soupsieve = "^2.5"
+urllib3 = "^2.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
