@@ -1,11 +1,8 @@
-import datetime, locale, werkzeug, Room, json
-
-werkzeug.cached_property = werkzeug.utils.cached_property
-from robobrowser import RoboBrowser
+import datetime, locale, logging, json, sys
 from asyncio import sleep, run
 from os import getcwd
-import logging
-import sys
+
+import requests
 
 logging.basicConfig(filename="roominfo.log", level=logging.INFO)
 logging.getLogger().addHandler(logging.StreamHandler())
@@ -13,123 +10,101 @@ logging.getLogger().addHandler(logging.StreamHandler())
 strnow = lambda: datetime.datetime.now().isoformat()
 
 
-def get_name_from_url(url):
-    url = url.split("?")[1]
-    tuples = url.split("&")[-3:]
-    name = ""
-    for tup in tuples:
-        name += f'{tup.split("=")[1]} '
-    name = name.strip().split(" ")
-    return name[0], " ".join(name[1:])
-
-
-def get_availability(browser):
-    rows = browser.find_all("table")[1].select("tr")[1:]
-    checkDay = [0] * 5
-    availability = [[0] * 60 for i in range(5)]
-    availability_trimmed = [[0] * 48 for i in range(5)]
-    currentRow = 0
-    for row in rows:
-        if currentRow % 4 == 0:
-            columns = row.select("td")[2:]
-        else:
-            columns = row.select("td")[1:]
-        it = 0
-        for i in range(5):
-            if checkDay[i] != 0:
-                checkDay[i] -= 1
-            else:
-                # Explicitly skip all bookings marked "study rooms"
-                if True:
-                    allow_blocked = "rbeitsplätze" in str(columns[it].find("font"))
-                    for o in range(int(columns[it]["rowspan"])):
-                        availability[i][currentRow + o] = (
-                            1
-                            if allow_blocked or columns[it]["bgcolor"] == "#99cc99"
-                            else 0
-                        )
-                    checkDay[i] = int(columns[it]["rowspan"]) - 1
-                it += 1
-                availability_trimmed[i] = availability[i][4:52]
-        currentRow += 1
+def get_availability(allocation_data):
+    # Mo-Fr 08:00-20:00
+    availability_trimmed = [[1] * 12 * 4 for _ in range(5)]
+    for allocation_block in allocation_data:
+        start = datetime.datetime.fromisoformat(allocation_block["date_from"])
+        end = datetime.datetime.fromisoformat(allocation_block["date_to"])
+        if start.weekday() >= 5:
+            continue
+        start_index = start.hour * 4 + start.minute // 15 - (8 * 4)
+        end_index = end.hour * 4 + end.minute // 15 - (8 * 4)
+        for i in range(start_index, end_index):
+            if i < 0 or i >= 12 * 4:
+                continue
+            availability_trimmed[start.weekday()][i] = 0
     return availability_trimmed
+
+
+def roominfo_request(path, extra_params={}):
+    params = "&".join([f"path={path}"] + [f"{k}={v}" for k, v in extra_params.items()])
+    logging.info(strnow() + f"\tRequesting https://ethz.ch/bin/ethz/roominfo?{params}")
+    return requests.get(
+        f"https://ethz.ch/bin/ethz/roominfo?{params}",
+        headers={"User-Agent": "Mozilla/5.0"},
+    ).json()
 
 
 async def update_json():
     logging.info(strnow() + "\tUpdating json")
-    browser = RoboBrowser(
-        parser="html.parser",
-        user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0",
-    )
-    browser.open("http://www.rauminfo.ethz.ch/IndexPre.do")
 
-    room_links = [
-        x["href"]
-        for x in browser.select(".tabcell-distance a")
-        if "RauminfoPre.do" in str(x["href"])
+    rooms = [
+        r
+        for r in roominfo_request("/rooms")
+        if r["orgunit"][0]["orgunit"] == "09188"  # "Unterrichtsräume Rektorat"
+        and r["typecode"] in ["3430", "3420"]  # Lecture halls, seminar/course rooms
     ]
+
     today = datetime.datetime.now()
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     monday_thisweek = today - datetime.timedelta(days=today.weekday())
-    monday_nextweek = monday_thisweek + datetime.timedelta(weeks=1)
+
+    next_mondays = [
+        (monday_thisweek + datetime.timedelta(weeks=i)).isoformat() for i in range(3)
+    ]
 
     jsonData = {
-        "datetime_thisweek": monday_thisweek.isoformat(),
-        "datetime_nextweek": monday_nextweek.isoformat(),
+        "datetime_thisweek": next_mondays[0],
+        "datetime_nextweek": next_mondays[1],
         "datetime_now": strnow(),
         "buildings": {},
     }
 
-    for room in room_links:
+    for room in rooms:
         try:
-            await sleep(0.5)
-            browser.open("http://www.rauminfo.ethz.ch/" + room)
-            name = get_name_from_url(room)
-            form = browser.get_forms()[1]
-            checkable = (
-                form["rektoratInListe"].value == "true"
-                and form["raumInRaumgruppe"].value == "true"
+            await sleep(0.2)
+            r_building, r_floor, r_room = room["building"], room["floor"], room["room"]
+            room_groups = roominfo_request(
+                "/roomgroup", {"building": r_building, "floor": r_floor, "room": r_room}
             )
-            if not checkable:
-                logging.info(strnow() + "\tSkipping room " + " ".join(name))
+            room_name = f"{r_building} {r_floor} {r_room}"
+            if 114 not in room_groups["roomGroups"]:
+                logging.info(strnow() + "\tSkipping room " + room_name)
                 continue
 
-            daystr = monday_thisweek.strftime("%d")
-            if daystr[0] == "0":
-                form["tag"].value = daystr[1]
-            else:
-                form["tag"].value = daystr
-            form["monat"].value = monday_thisweek.strftime("%b")
-            form["jahr"].value = monday_thisweek.strftime("%Y")
-            browser.submit_form(form)
-            availability_thisweek = get_availability(browser)
-            browser.back()
-            daystr = monday_nextweek.strftime("%d")
-            if daystr[0] == "0":
-                form["tag"].value = daystr[1]
-            else:
-                form["tag"].value = daystr
-            form["monat"].value = monday_nextweek.strftime("%b")
-            form["jahr"].value = monday_nextweek.strftime("%Y")
-            browser.submit_form(form)
-            availability_nextweek = get_availability(browser)
-            roomObj = Room.Room(name[1], availability_thisweek, availability_nextweek)
-            if name[0] not in jsonData.get("buildings"):
-                jsonData.get("buildings").update({name[0]: []})
-            jsonData.get("buildings").get(name[0]).append(roomObj.__dict__)
-            logging.info(strnow() + "\tAdded room " + " ".join(name))
+            room_availabilites = []
+            for week in range(2):
+                start = next_mondays[week].split("T")[0]
+                end = next_mondays[week + 1].split("T")[0]
+                allocation_data = roominfo_request(
+                    f"/rooms/{room_name}/allocations", {"from": start, "to": end}
+                )
+                room_availabilites.append(get_availability(allocation_data))
+
+            if r_building not in jsonData["buildings"]:
+                jsonData["buildings"][r_building] = []
+
+            jsonData["buildings"].get(r_building).append(
+                {
+                    "name": f"{r_floor} {r_room}",
+                    "availability_thisweek": room_availabilites[0],
+                    "availability_nextweek": room_availabilites[1],
+                }
+            )
+            logging.info(strnow() + "\tAdded room " + room_name)
         except Exception as e:
             logging.info(
                 strnow()
-                + f'\tError occurred with room {" ".join(name)} on line {sys.exc_info()[-1].tb_lineno}:\n__ '
+                + f"\tError occurred with room {room_name} on line {sys.exc_info()[-1].tb_lineno}:\n__ "
                 + str(e)
             )
-            logging.info("__ Therefore, skipping room " + " ".join(name))
+            logging.info("__ Therefore, skipping room " + room_name)
 
     with open("docs/data/data.json", "w") as file:
         json.dump(jsonData, file, ensure_ascii=False)
         logging.info(strnow() + f"\tSaved to path: {getcwd()}/docs/data/data.json")
-    logging.info(strnow() + "\tSuccessfully updated json")
+    logging.info(strnow() + f"\tSuccessfully updated json for {len(rooms)} rooms")
 
 
 locale.setlocale(locale.LC_ALL, "de_CH")
